@@ -13,7 +13,8 @@ import {
     Apartment, Inbox as InboxIcon, CheckCircle, Search
 } from '@mui/icons-material';
 
-const API_BASE_URL = 'http://localhost:3000';
+// CORRECTED: This now points to your live backend server on Render
+const API_BASE_URL = 'https://siteweave-ai-backend.onrender.com';
 const DRAWER_WIDTH = 260;
 
 // --- 1. App Theme ---
@@ -88,12 +89,12 @@ function App() {
         setError(null);
         try {
             const response = await fetch(`${API_BASE_URL}/fetch-emails`, {
-                method: 'POST', // Changed to POST
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: JSON.stringify({ searchQuery: query }) // Send search query in the body
+                body: JSON.stringify({ searchQuery: query })
             });
             if (!response.ok) {
                 const errorText = await response.text();
@@ -108,13 +109,12 @@ function App() {
         }
     }, [isLoggedIn]);
 
-    // Debounce search input
     useEffect(() => {
         const handler = setTimeout(() => {
             if (isLoggedIn) {
                 handleFetchAndAnalyze(searchQuery);
             }
-        }, 500); // Wait 500ms after user stops typing
+        }, 500);
 
         return () => {
             clearTimeout(handler);

@@ -4,13 +4,13 @@ import React, { useState, useEffect, useContext, createContext, useCallback } fr
 import {
     CssBaseline, Box, ThemeProvider, createTheme, Drawer, AppBar, Toolbar, Typography,
     List, ListItem, ListItemButton, ListItemIcon, ListItemText, Button, CircularProgress,
-    Card, CardContent, CardHeader, Collapse, IconButton, Alert, TextField, InputAdornment
+    Card, CardContent, CardHeader, Collapse, IconButton, Alert
 } from '@mui/material';
 
 // MUI Icons
 import {
     Mail, Login, Logout, Insights, Settings, Refresh, ChevronRight, ExpandMore,
-    Apartment, Inbox as InboxIcon, CheckCircle, Search
+    Apartment, Inbox as InboxIcon, CheckCircle
 } from '@mui/icons-material';
 
 const API_BASE_URL = 'https://backend-1iqu.onrender.com';
@@ -80,21 +80,14 @@ function App() {
     const [analyzedEmails, setAnalyzedEmails] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
 
-    const handleFetchAndAnalyze = useCallback(async (query) => {
+    const handleFetchAndAnalyze = useCallback(async () => {
         if (!isLoggedIn) return;
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch(`${API_BASE_URL}/fetch-emails`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({ searchQuery: query })
-            });
+            // Reverted to a simple GET request
+            const response = await fetch(`${API_BASE_URL}/fetch-emails`, { credentials: 'include' });
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`Server error: ${response.status} - ${errorText}`);
@@ -108,30 +101,11 @@ function App() {
         }
     }, [isLoggedIn]);
 
-    // CORRECTED LOGIC: This hook now ONLY handles the initial fetch on login.
     useEffect(() => {
         if (isLoggedIn) {
-            handleFetchAndAnalyze(''); // Fetch with an empty query on login
+            handleFetchAndAnalyze();
         }
     }, [isLoggedIn, handleFetchAndAnalyze]);
-
-
-    // This hook now ONLY handles the debounced search functionality.
-    useEffect(() => {
-        if (!isLoggedIn) return; // Don't do anything if not logged in
-
-        const handler = setTimeout(() => {
-            // Only trigger search if the query is not the initial empty state
-            if (searchQuery) {
-                handleFetchAndAnalyze(searchQuery);
-            }
-        }, 500); // Wait 500ms after user stops typing
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [searchQuery, isLoggedIn, handleFetchAndAnalyze]);
-
 
     return (
         <Box sx={{ display: 'flex' }}>
@@ -173,33 +147,17 @@ function App() {
             </Drawer>
             <Box component="main" sx={{ flexGrow: 1, p: 3, bgcolor: 'background.default', minHeight: '100vh' }}>
                 <Toolbar />
-                <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', gap: '1rem' }}>
+                <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                     <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Inbox Analysis</Typography>
                     {isLoggedIn && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                             <TextField
-                                variant="outlined"
-                                size="small"
-                                placeholder="Search emails..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <Search color="action" />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                            />
-                            <Button
-                                variant="outlined"
-                                startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : <Refresh />}
-                                onClick={() => handleFetchAndAnalyze(searchQuery)}
-                                disabled={isLoading}
-                            >
-                                {isLoading ? 'Searching...' : 'Refresh'}
-                            </Button>
-                        </Box>
+                        <Button
+                            variant="outlined"
+                            startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : <Refresh />}
+                            onClick={handleFetchAndAnalyze}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? 'Analyzing...' : 'Refresh Inbox'}
+                        </Button>
                     )}
                 </header>
                 <ContentArea

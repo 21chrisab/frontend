@@ -13,7 +13,6 @@ import {
     Apartment, Inbox as InboxIcon, CheckCircle, Search
 } from '@mui/icons-material';
 
-// CORRECTED: This now points to your live backend server on Render
 const API_BASE_URL = 'https://backend-1iqu.onrender.com';
 const DRAWER_WIDTH = 260;
 
@@ -109,12 +108,24 @@ function App() {
         }
     }, [isLoggedIn]);
 
+    // CORRECTED LOGIC: This hook now ONLY handles the initial fetch on login.
     useEffect(() => {
+        if (isLoggedIn) {
+            handleFetchAndAnalyze(''); // Fetch with an empty query on login
+        }
+    }, [isLoggedIn, handleFetchAndAnalyze]);
+
+
+    // This hook now ONLY handles the debounced search functionality.
+    useEffect(() => {
+        if (!isLoggedIn) return; // Don't do anything if not logged in
+
         const handler = setTimeout(() => {
-            if (isLoggedIn) {
+            // Only trigger search if the query is not the initial empty state
+            if (searchQuery) {
                 handleFetchAndAnalyze(searchQuery);
             }
-        }, 500);
+        }, 500); // Wait 500ms after user stops typing
 
         return () => {
             clearTimeout(handler);

@@ -4,16 +4,16 @@ import React, { useState, useEffect, useContext, createContext, useCallback } fr
 import {
     CssBaseline, Box, ThemeProvider, createTheme, Drawer, AppBar, Toolbar, Typography,
     List, ListItem, ListItemButton, ListItemIcon, ListItemText, Button, CircularProgress,
-    Card, CardContent, CardHeader, Collapse, IconButton, Alert
+    Card, CardContent, CardHeader, Collapse, IconButton, Alert, TextField, InputAdornment
 } from '@mui/material';
 
 // MUI Icons
 import {
     Mail, Login, Logout, Insights, Settings, Refresh, ChevronRight, ExpandMore,
-    Apartment, Inbox as InboxIcon, CheckCircle
+    Apartment, Inbox as InboxIcon, CheckCircle, Search
 } from '@mui/icons-material';
 
-const API_BASE_URL = 'https://backend-1iqu.onrender.com/';
+const API_BASE_URL = 'http://localhost:3000';
 const DRAWER_WIDTH = 260;
 
 // --- 1. App Theme ---
@@ -80,13 +80,21 @@ function App() {
     const [analyzedEmails, setAnalyzedEmails] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const handleFetchAndAnalyze = useCallback(async () => {
+    const handleFetchAndAnalyze = useCallback(async (query) => {
         if (!isLoggedIn) return;
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch(`${API_BASE_URL}/fetch-emails`, { credentials: 'include' });
+            const response = await fetch(`${API_BASE_URL}/fetch-emails`, {
+                method: 'POST', // Changed to POST
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ searchQuery: query }) // Send search query in the body
+            });
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`Server error: ${response.status} - ${errorText}`);
@@ -100,11 +108,19 @@ function App() {
         }
     }, [isLoggedIn]);
 
+    // Debounce search input
     useEffect(() => {
-        if (isLoggedIn) {
-            handleFetchAndAnalyze();
-        }
-    }, [isLoggedIn, handleFetchAndAnalyze]);
+        const handler = setTimeout(() => {
+            if (isLoggedIn) {
+                handleFetchAndAnalyze(searchQuery);
+            }
+        }, 500); // Wait 500ms after user stops typing
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchQuery, isLoggedIn, handleFetchAndAnalyze]);
+
 
     return (
         <Box sx={{ display: 'flex' }}>
@@ -146,17 +162,33 @@ function App() {
             </Drawer>
             <Box component="main" sx={{ flexGrow: 1, p: 3, bgcolor: 'background.default', minHeight: '100vh' }}>
                 <Toolbar />
-                <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', gap: '1rem' }}>
                     <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Inbox Analysis</Typography>
                     {isLoggedIn && (
-                        <Button
-                            variant="outlined"
-                            startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : <Refresh />}
-                            onClick={handleFetchAndAnalyze}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? 'Analyzing...' : 'Refresh Inbox'}
-                        </Button>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                             <TextField
+                                variant="outlined"
+                                size="small"
+                                placeholder="Search emails..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Search color="action" />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+                            <Button
+                                variant="outlined"
+                                startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : <Refresh />}
+                                onClick={() => handleFetchAndAnalyze(searchQuery)}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? 'Searching...' : 'Refresh'}
+                            </Button>
+                        </Box>
                     )}
                 </header>
                 <ContentArea
@@ -208,7 +240,7 @@ const ContentArea = ({ isLoading, error, emails }) => {
              <Card sx={{ textAlign: 'center', py: 8 }}>
                 <InboxIcon sx={{ fontSize: 48, color: 'grey.400' }} />
                 <Typography variant="h6" mt={2}>Inbox is Ready</Typography>
-                <Typography color="text.secondary" mt={1}>Click "Refresh" to analyze the latest emails.</Typography>
+                <Typography color="text.secondary" mt={1}>Your analyzed emails will appear here.</Typography>
             </Card>
         );
     }

@@ -14,7 +14,7 @@ import {
 } from '@mui/icons-material';
 
 // CORRECTED: This now points to your live backend server on Render
-const API_BASE_URL = 'https://siteweave-ai-backend.onrender.com';
+const API_BASE_URL = 'https://backend-1iqu.onrender.com';
 const DRAWER_WIDTH = 260;
 
 // --- 1. App Theme ---
